@@ -4,16 +4,19 @@
 #include "ofMain.h"
 
 #include <windows.h>
-#include <d3d11.h>
-#include <d3dx11.h>
+#include <d3d11_1.h>
+//#include <d3dx11.h>
 #include <d3dcompiler.h>
-#include <xnamath.h>
-#include "resource.h"
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
+//#include <xnamath.h>
+#include <ofxIO.h>
 
 
 //PL: causes weird crash on my laptop if the following is not defined.... Only when running in ofThread though
 #define _XM_NO_INTRINSICS_
 
+using namespace DirectX;
 
 class myDxThread : public ofThread
 {
@@ -23,7 +26,7 @@ private :
 	Poco::Event dxReady;
 	Poco::Event glReady;
 
-		//--------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
 	public :

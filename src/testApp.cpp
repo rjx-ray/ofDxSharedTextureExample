@@ -1,19 +1,7 @@
-//ofDxSharedTexture example written by Philippe Laulheret for Second Story (secondstory.com)
-//Simple example to use nv_interop extension
-//Based on microsoft dx sdk sample
-//MIT Licensing
-
-
 #include "testApp.h"
 
-#include "dxThread.h"
-
-#include "GL\wglew.h"
-
-
-
 //--------------------------------------------------------------
-void testApp::setup(){
+void ofApp::setup(){
 
 
 	ofSetFrameRate(55);
@@ -21,45 +9,46 @@ void testApp::setup(){
 
 	handle_shared_texture = NULL;
 	gl_device = NULL;
+	ofLogToConsole();
+	ofSetLogLevel(OF_LOG_VERBOSE);
 
 
 	//We run direct3d rendering in a separate thread to be closer to a real life situation
-	dxThread = new myDxThread();      
-	dxThread->startThread(true,false);
+	dxThread = new myDxThread();
+	dxThread->startThread(false);
 
 
 	// With D3D11, we need to be sure nothing is being rendered on the device/texture while we open it up. 
 	// So here's some simple synchronization mechanism to make sure of it
-	dxThread->waitForDxReady();  
+	dxThread->waitForDxReady();
 	gl_device = wglDXOpenDeviceNV(dxThread->g_pd3dDevice);
 
-	if (! gl_device) ofLogError("dxTest","Error while opening shared device");
-	
+	if (!gl_device) ofLogError("dxTest", "Error while opening shared device");
+
 
 	ID3D11Texture2D* p_backBuffer;
-	dxThread->g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *)&p_backBuffer);
+	dxThread->g_pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID *) &p_backBuffer);
 
 
 
-	sharedTexture.allocate(640,480,GL_RGBA); //put the size of your window
-	handle_shared_texture = wglDXRegisterObjectNV(gl_device,p_backBuffer,sharedTexture.texData.textureID,GL_TEXTURE_RECTANGLE_ARB,WGL_ACCESS_READ_ONLY_NV);
-	if (!handle_shared_texture) ofLogError("dxTest","Error while opening shared texture");
+	sharedTexture.allocate(640, 480, GL_RGBA); //put the size of your window
+	handle_shared_texture = wglDXRegisterObjectNV(gl_device, p_backBuffer, sharedTexture.texData.textureID, GL_TEXTURE_RECTANGLE_ARB, WGL_ACCESS_READ_ONLY_NV);
+	if (!handle_shared_texture) ofLogError("dxTest", "Error while opening shared texture");
 
 
 	//Once we're done creating our thing we can kick in the rendering on the D3D side
-	dxThread->notifyGlReady(); 
+	dxThread->notifyGlReady();
 
 }
 
 //--------------------------------------------------------------
-void testApp::update(){
-	ofSetWindowTitle("FPS: " +ofToString(ofGetFrameRate()));
-
+void ofApp::update(){
+	ofSetWindowTitle("FPS: " + ofToString(ofGetFrameRate()));
 }
 
 //--------------------------------------------------------------
-void testApp::draw(){
-	ofBackground(0,0,0);
+void ofApp::draw(){
+	ofBackground(0, 0, 0);
 
 
 	//Here I'm reusing the previous synchronization object to assure that nothing is being rendered onto the surface while it's being used in openGL.
@@ -68,25 +57,21 @@ void testApp::draw(){
 	//But for the sake of simplicity, we stick for the current synced solution for this example.
 	dxThread->waitForDxReady();
 
-	wglDXLockObjectsNV(gl_device,1,&handle_shared_texture); //you shouldnt use this if the opening of the device/texture failed.....
-	sharedTexture.draw(0,0);
-	wglDXUnlockObjectsNV(gl_device,1,&handle_shared_texture); //It appears that everything works fine if you don't unlock your object. But that's not what the specs says, so be careful.
+	wglDXLockObjectsNV(gl_device, 1, &handle_shared_texture); //you shouldnt use this if the opening of the device/texture failed.....
+	sharedTexture.draw(0, 0);
+	wglDXUnlockObjectsNV(gl_device, 1, &handle_shared_texture); //It appears that everything works fine if you don't unlock your object. But that's not what the specs says, so be careful.
 	dxThread->notifyGlReady();
 }
 
-
-void testApp::	exit(ofEventArgs & args)
-{
+void ofApp::exit(ofEventArgs & args) {
 	cleanUp();
 }
 
 
-void testApp::cleanUp()
-{
+void ofApp::cleanUp() {
 	//We should probably have some lock here as well.
-	if (gl_device)
-	{
-		if (handle_shared_texture) wglDXUnregisterObjectNV(gl_device,handle_shared_texture);
+	if (gl_device) {
+		if (handle_shared_texture) wglDXUnregisterObjectNV(gl_device, handle_shared_texture);
 		wglDXCloseDeviceNV(gl_device);
 	}
 	gl_device = NULL;
@@ -94,47 +79,56 @@ void testApp::cleanUp()
 }
 
 //--------------------------------------------------------------
-void testApp::keyPressed(int key){
+void ofApp::keyPressed(int key){
 
 }
 
 //--------------------------------------------------------------
-void testApp::keyReleased(int key){
+void ofApp::keyReleased(int key){
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseMoved(int x, int y){
+void ofApp::mouseMoved(int x, int y ){
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseDragged(int x, int y, int button){
+void ofApp::mouseDragged(int x, int y, int button){
 
 }
 
 //--------------------------------------------------------------
-void testApp::mousePressed(int x, int y, int button){
+void ofApp::mousePressed(int x, int y, int button){
 
 }
 
 //--------------------------------------------------------------
-void testApp::mouseReleased(int x, int y, int button){
+void ofApp::mouseReleased(int x, int y, int button){
 
 }
 
 //--------------------------------------------------------------
-void testApp::windowResized(int w, int h){
+void ofApp::mouseEntered(int x, int y){
 
 }
 
 //--------------------------------------------------------------
-void testApp::gotMessage(ofMessage msg){
+void ofApp::mouseExited(int x, int y){
 
 }
 
 //--------------------------------------------------------------
-void testApp::dragEvent(ofDragInfo dragInfo){ 
+void ofApp::windowResized(int w, int h){
 
 }
 
+//--------------------------------------------------------------
+void ofApp::gotMessage(ofMessage msg){
+
+}
+
+//--------------------------------------------------------------
+void ofApp::dragEvent(ofDragInfo dragInfo){ 
+
+}

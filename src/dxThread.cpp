@@ -160,12 +160,12 @@ HRESULT myDxThread::InitWindow( HINSTANCE hInstance, int nCmdShow )
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hInstance;
-	wcex.hIcon = LoadIcon( hInstance, ( LPCTSTR )IDI_TUTORIAL1 );
+	wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	wcex.hCursor = LoadCursor( NULL, IDC_ARROW );
 	wcex.hbrBackground = ( HBRUSH )( COLOR_WINDOW + 1 );
 	wcex.lpszMenuName = NULL;
 	wcex.lpszClassName = L"TutorialWindowClass";
-	wcex.hIconSm = LoadIcon( wcex.hInstance, ( LPCTSTR )IDI_TUTORIAL1 );
+	wcex.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 	if( !RegisterClassEx( &wcex ) )
 		return E_FAIL;
 
@@ -184,42 +184,59 @@ HRESULT myDxThread::InitWindow( HINSTANCE hInstance, int nCmdShow )
 	return S_OK;
 }
 
-
 //--------------------------------------------------------------------------------------
-// Helper for compiling shaders with D3DX11
+// Helper for compiling shader
 //--------------------------------------------------------------------------------------
-HRESULT CompileShaderFromFile( WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut )
+#pragma comment(lib,"d3dcompiler.lib")
+HRESULT CompileShaderFromFile(_In_ LPCWSTR srcFile, _In_ LPCSTR entryPoint, _In_ LPCSTR profile, _Outptr_ ID3DBlob** blob)
 {
-	HRESULT hr = S_OK;
+	if (!srcFile || !entryPoint || !profile || !blob)
+		return E_INVALIDARG;
 
-	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+	*blob = nullptr;
+
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined( DEBUG ) || defined( _DEBUG )
-	// Set the D3DCOMPILE_DEBUG flag to embed debug information in the shaders.
-	// Setting this flag improves the shader debugging experience, but still allows 
-	// the shaders to be optimized and to run exactly the way they will run in 
-	// the release configuration of this program.
-	dwShaderFlags |= D3DCOMPILE_DEBUG;
+	flags |= D3DCOMPILE_DEBUG;
 #endif
 
-	ID3DBlob* pErrorBlob;
-	hr = D3DX11CompileFromFile( szFileName, NULL, NULL, szEntryPoint, szShaderModel, 
-		dwShaderFlags, 0, NULL, ppBlobOut, &pErrorBlob, NULL );
-	if( FAILED(hr) )
+	const D3D_SHADER_MACRO defines[] =
 	{
-		if( pErrorBlob != NULL )
-			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-		if( pErrorBlob ) pErrorBlob->Release();
+		"EXAMPLE_DEFINE", "1",
+		NULL, NULL
+	};
+
+	ID3DBlob* shaderBlob = nullptr;
+	ID3DBlob* errorBlob = nullptr;
+	HRESULT hr = D3DCompileFromFile(srcFile, defines, D3D_COMPILE_STANDARD_FILE_INCLUDE,
+		entryPoint, profile,
+		flags, 0, &shaderBlob, &errorBlob);
+	if (FAILED(hr))
+	{
+		if (errorBlob)
+		{
+			string err = (char*)errorBlob->GetBufferPointer();
+			cout << err << endl;
+			OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+			errorBlob->Release();
+		}
+
+		if (shaderBlob)
+			shaderBlob->Release();
+
 		return hr;
 	}
-	if( pErrorBlob ) pErrorBlob->Release();
 
-	return S_OK;
+	*blob = shaderBlob;
+
+	return hr;
 }
 
 
 //--------------------------------------------------------------------------------------
 // Create Direct3D device and swap chain
 //--------------------------------------------------------------------------------------
+#pragma comment(lib,"D3D11.lib")
 HRESULT myDxThread::InitDevice()
 {
 	HRESULT hr = S_OK;
